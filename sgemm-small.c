@@ -25,6 +25,29 @@ void transpose( int n, int blocksize, float *dst, float *src ) {
 }
 
 
+int mul_vectorized( int n, int *a )
+{
+    /* WRITE YOUR VECTORIZED CODE HERE */
+    __m128i mul = _mm_setzero_si128();
+    __m128i* ai = (__m128*) a;
+    int index = 0;
+    int temp_index = 0;
+    int mul1[4];
+    for(index = 0; index < n/4*4; index += 4){
+	ai = (__m128*) a;
+	mul = _mm_mul_epi32(mul, _mm_loadu_si128(ai));
+	a += 4;
+    }
+    _mm_storeu_si128((__m128*) mul1, mul);
+    int mul2 = mul1[0]+mul1[1]+mul1[2]+mul1[3];
+    while(index < n){
+	mul2 += a[temp_index];
+	index += 1;
+	temp_index += 1;
+    }
+    return mul2;
+}
+
 /* This routine performs a sgemm operation
  *  C := C + A * B
  * where A, B, and C are lda-by-lda matrices stored in column-major format.
