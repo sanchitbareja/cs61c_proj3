@@ -24,10 +24,9 @@ void transpose( int n, int blocksize, float *dst, float *src ) {
     // 	block size 1000 -> 43.078
 }
 
-
+/*
 int mul_vectorized( int n, float *a )
 {
-    /* WRITE YOUR VECTORIZED CODE HERE */
     __m128f mul = _mm_setzero_si128();
     __m128f* ai = (__m128*) a;
     int index = 0;
@@ -47,7 +46,7 @@ int mul_vectorized( int n, float *a )
     }
     return mul2;
 }
-
+*/
 /* This routine performs a sgemm operation
  *  C := C + A * B
  * where A, B, and C are lda-by-lda matrices stored in column-major format.
@@ -67,8 +66,14 @@ void square_sgemm (int n, float* A, float* B, float* C)
                     for(int j_block = j; j_block < j+blocksize && j_block < n; j_block++) {
                         /* Compute C(i,j) */
                         float cij = C[i_block+j_block*n];
-                        for( int k_block = 0; k_block < n; k_block++) {
-                            cij += At[k_block+i_block*n] * B[k_block+j_block*n];
+                        for( int k_block = 0; k_block < (n/4*4); k_block+=4) {
+                            __m128 res = _mm_mul_ps(_mm_loadu_ps((At + (k_block + i_block*n))), _mm_loadu_ps(B + (k_block + j_block * n)));
+                            float flres[4];
+                            _mm_storeu_ps(flres, res);
+                            cij += flres[0] + flres[1] + flres[2] + flres[3];
+                        }
+                        for ( int k_block = (n/4 * 4); k_block < n; k_block++){
+                            cij += At[k_block + i_block * n] * B[k_block + j_block * n];
                         }
                         C[i_block+j_block*n] = cij;
                     }
@@ -94,7 +99,7 @@ void square_sgemm_naive (int n, float* A, float* B, float* C)
     }
 }
 
-
+/*
 int main( int argc, char **argv ) {
     int n = 64,i,j;
 
@@ -149,4 +154,4 @@ int main( int argc, char **argv ) {
     free( F );
     return 0;
 }
-
+*/
