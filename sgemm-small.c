@@ -43,7 +43,7 @@ void square_sgemm (int n, float* A, float* B, float* C)
 		for(int j_block = j; j_block < j+blocksize && j_block < n; j_block++) {
 		    /* Compute C(i,j) */
 		    float cij = C[i_block+j_block*n];
-		    for( int k = 0; k < blocksize && k+j_block < n; k++) {
+		    for( int k = j_block; k < j_block+blocksize && k < n; k++) {
 			cij += At[k] * B[k];
 		    }
 		    C[i_block+j_block*n] = cij;
