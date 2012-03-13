@@ -31,7 +31,7 @@ void transpose( int n, int blocksize, float *dst, float *src ) {
  * On exit, A and B maintain their input values. */    
 void square_sgemm (int n, float* A, float* B, float* C)
 {
-    int blocksize = 10;
+    int blocksize = 16;
     float *At = (float*)malloc( n*n*sizeof(float) );
     transpose( n, blocksize, At, A );
 
@@ -71,7 +71,7 @@ void square_sgemm_naive (int n, float* A, float* B, float* C)
     }
 }
 
-/*
+
 int main( int argc, char **argv ) {
     int n = 64,i,j;
 
@@ -126,4 +126,4 @@ int main( int argc, char **argv ) {
     free( F );
     return 0;
 }
-*/
+
