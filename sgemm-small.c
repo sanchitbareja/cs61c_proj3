@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <emmintrin.h> /* header file for the SSE intrinsics we gonna use */
+#include <smmintrin.h> /* header file for the SSE intrinsics we gonna use */
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
@@ -55,7 +55,7 @@ void square_sgemm (int n, float* A, float* B, float* C)
 {
     int blocksize = 16;
     float *At = (float*)malloc( n*n*sizeof(float) );
-    transpose( n, blocksize, At, A );
+    transpose( n, 13, At, A );
 
     /* For each row i of A */
     for (int i = 0; i < n; i+=blocksize) {
@@ -66,13 +66,29 @@ void square_sgemm (int n, float* A, float* B, float* C)
                     for(int j_block = j; j_block < j+blocksize && j_block < n; j_block++) {
                         /* Compute C(i,j) */
                         float cij = C[i_block+j_block*n];
-                        for( int k_block = 0; k_block < (n/4*4); k_block+=4) {
+                        for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
                             __m128 res = _mm_mul_ps(_mm_loadu_ps((At + (k_block + i_block*n))), _mm_loadu_ps(B + (k_block + j_block * n)));
-                            float flres[4];
-                            _mm_storeu_ps(flres, res);
-                            cij += flres[0] + flres[1] + flres[2] + flres[3];
+                            __m128 res1 = _mm_mul_ps(_mm_loadu_ps((At + 4 + (k_block + i_block*n))), _mm_loadu_ps(B + 4 + (k_block + j_block * n)));
+                            res = _mm_add_ps(res,res1);
+                            __m128 res2 = _mm_mul_ps(_mm_loadu_ps((At + 8 + (k_block + i_block*n))), _mm_loadu_ps(B + 8 + (k_block + j_block * n)));
+                            res = _mm_add_ps(res,res2);
+                            __m128 res3 = _mm_mul_ps(_mm_loadu_ps((At + 12 + (k_block + i_block*n))), _mm_loadu_ps(B + 12 +  (k_block + j_block * n)));
+                            res = _mm_add_ps(res,res3);
+                            __m128 res4 = _mm_mul_ps(_mm_loadu_ps((At + 16 + (k_block + i_block*n))), _mm_loadu_ps(B + 16 +  (k_block + j_block * n)));
+                            res = _mm_add_ps(res,res4);
+                            __m128 res5 = _mm_mul_ps(_mm_loadu_ps((At + 20 + (k_block + i_block*n))), _mm_loadu_ps(B + 20 +  (k_block + j_block * n)));
+                            res = _mm_add_ps(res,res5);
+                            __m128 res6 = _mm_mul_ps(_mm_loadu_ps((At + 24 + (k_block + i_block*n))), _mm_loadu_ps(B + 24 +  (k_block + j_block * n)));
+                            res = _mm_add_ps(res,res6);
+                            __m128 res7 = _mm_mul_ps(_mm_loadu_ps((At + 28 + (k_block + i_block*n))), _mm_loadu_ps(B + 28 +  (k_block + j_block * n)));
+                            res = _mm_add_ps(res,res7);
+                            res = _mm_hadd_ps(res,res);
+                            res = _mm_hadd_ps(res,res);
+                            float flres[1];
+                            _mm_store_ss(flres, res);
+                            cij += flres[0];
                         }
-                        for ( int k_block = (n/4 * 4); k_block < n; k_block++){
+                        for ( int k_block = (n/32 * 32); k_block < n; k_block++){
                             cij += At[k_block + i_block * n] * B[k_block + j_block * n];
                         }
                         C[i_block+j_block*n] = cij;
