@@ -32,8 +32,8 @@ void transpose( int n, int blocksize, float *dst, float *src ) {
 void square_sgemm (int n, float* A, float* B, float* C)
 {
     int blocksize = 16;
-    float *Bt = (float*)malloc( n*n*sizeof(float) );
-    transpose( n, blocksize, B, Bt );
+    float *At = (float*)malloc( n*n*sizeof(float) );
+    transpose( n, blocksize, A, At );
 
     /* For each row i of A */
     for (int i = 0; i < n; i+=blocksize) {
@@ -44,7 +44,7 @@ void square_sgemm (int n, float* A, float* B, float* C)
 		    /* Compute C(i,j) */
 		    float cij = C[i_block+j_block*n];
 		    for( int k = 0; k < blocksize && k+j_block < n; k++) {
-			cij += A[i_block+(k+j_block)*n] * Bt[i_block+(k+j_block)*n];
+			cij += At[k] * B[k];
 		    }
 		    C[i_block+j_block*n] = cij;
 		}
@@ -68,7 +68,7 @@ void square_sgemm_naive (int n, float* A, float* B, float* C)
     }
 }
 
-/*
+
 int main( int argc, char **argv ) {
     int n = 64,i,j;
 
@@ -86,6 +86,8 @@ int main( int argc, char **argv ) {
     for( i = 0; i < n*n; i++ ) B[i] = lrand48( );
     for( i = 0; i < n*n; i++ ) D[i] = A[i];
     for( i = 0; i < n*n; i++ ) E[i] = B[i];
+    for( i = 0; i < n*n; i++ ) C[i] = 0;
+    for( i = 0; i < n*n; i++ ) F[i] = 0;
     
     // measure performance 
     struct timeval start, end;
@@ -108,8 +110,8 @@ int main( int argc, char **argv ) {
     for( i = 0; i < n; i++ )
         for( j = 0; j < n; j++ )
             if( C[j+i*n] != F[j+i*n] ) {
-	        printf("Error!!!! MMM does not result in correct answer!!\n");
-	        exit( -1 );
+	        printf("Error!!!! MMM does not result in correct answer!! i = %d j = %d C = %f F = %f \n", i, j, C[j+i*n], F[j+i*n]);
+	        //exit( -1 );
             }
   
     // release resources
@@ -117,4 +119,4 @@ int main( int argc, char **argv ) {
     free( B );
     return 0;
 }
-*/
+
