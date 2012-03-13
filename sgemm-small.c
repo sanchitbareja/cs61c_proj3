@@ -31,26 +31,29 @@ void transpose( int n, int blocksize, float *dst, float *src ) {
  * On exit, A and B maintain their input values. */    
 void square_sgemm (int n, float* A, float* B, float* C)
 {
-    int blocksize = 16;
+    int blocksize = 10;
     float *At = (float*)malloc( n*n*sizeof(float) );
-    transpose( n, blocksize, A, At );
+    transpose( n, blocksize, At, A );
 
     /* For each row i of A */
     for (int i = 0; i < n; i+=blocksize) {
-	/* For each column j of B */
-	for (int j = 0; j < n; j+=blocksize) {
-	    for(int i_block = i; i_block < i+blocksize && i_block < n; i_block++) {
-		for(int j_block = j; j_block < j+blocksize && j_block < n; j_block++) {
-		    /* Compute C(i,j) */
-		    float cij = C[i_block+j_block*n];
-		    for( int k = j_block; k < j_block+blocksize && k < n; k++) {
-			cij += At[k] * B[k];
-		    }
-		    C[i_block+j_block*n] = cij;
-		}
-	    }
-	}
+        /* For each column j of B */
+        for (int j = 0; j < n; j+=blocksize) {
+            //for(int k = 0; k < n; k+= blocksize){
+                for(int i_block = i; i_block < i+blocksize && i_block < n; i_block++) {
+                    for(int j_block = j; j_block < j+blocksize && j_block < n; j_block++) {
+                        /* Compute C(i,j) */
+                        float cij = C[i_block+j_block*n];
+                        for( int k_block = 0; k_block < n; k_block++) {
+                            cij += At[k_block+i_block*n] * B[k_block+j_block*n];
+                        }
+                        C[i_block+j_block*n] = cij;
+                    }
+                }
+            //}
+        }
     }
+    free( At );
 }
 
 void square_sgemm_naive (int n, float* A, float* B, float* C)
@@ -68,7 +71,7 @@ void square_sgemm_naive (int n, float* A, float* B, float* C)
     }
 }
 
-
+/*
 int main( int argc, char **argv ) {
     int n = 64,i,j;
 
@@ -111,12 +114,16 @@ int main( int argc, char **argv ) {
         for( j = 0; j < n; j++ )
             if( C[j+i*n] != F[j+i*n] ) {
 	        printf("Error!!!! MMM does not result in correct answer!! i = %d j = %d C = %f F = %f \n", i, j, C[j+i*n], F[j+i*n]);
-	        //exit( -1 );
+	        exit( -1 );
             }
   
     // release resources
     free( A );
     free( B );
+    free( C );
+    free( D );
+    free( E );
+    free( F );
     return 0;
 }
-
+*/
