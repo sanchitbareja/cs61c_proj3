@@ -1,5 +1,5 @@
 HOME = /home/ff/cs61c
-CC = gcc-4.5 -std=gnu99 
+CC = gcc-4.5 -std=gnu99 -pg
 GOTO = $(HOME)/bin/GotoBLAS2_Linux
 GOTOLIB = $(GOTO)/libgoto2_nehalemp-r1.13.a
 
@@ -7,7 +7,7 @@ INCLUDES = -I$(GOTO)
 OMP = -fopenmp
 LIBS = -lpthread  
 # a pretty good flag selection for this machine...
-CFLAGS = -fopenmp -O2 -pipe -fno-omit-frame-pointer -march=native
+CFLAGS = -fopenmp -O2 -pipe -fno-omit-frame-pointer -march=native 
 
 all:	bench-naive bench-small bench-all bench-openmp 
 
