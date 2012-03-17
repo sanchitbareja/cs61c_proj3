@@ -54,7 +54,7 @@ int mul_vectorized( int n, float *a )
 void square_sgemm (int n, float* A, float* B, float* C)
 {
     int blocksize = 32;
-    float *At = (float*)malloc(n*n*sizeof(float) );
+    static  float At[1024*1024]__attribute__((aligned(16)));
     transpose( n, 13, At, A );
 
             for(int j_block = 0; j_block < n; j_block++) {
@@ -127,7 +127,6 @@ void square_sgemm (int n, float* A, float* B, float* C)
             }
         //}
     //}
-    free( At );
 }
 
 void square_sgemm_naive (int n, float* A, float* B, float* C)
