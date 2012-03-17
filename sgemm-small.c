@@ -58,45 +58,50 @@ void square_sgemm (int n, float* A, float* B, float* C)
     transpose( n, 13, At, A );
 
     /* For each row i of A */
-    for (int i = 0; i < n; i+=blocksize) {
+    //for (int i = 0; i < n; i+=blocksize) {
         /* For each column j of B */
-        for (int j = 0; j < n; j+=blocksize) {
-            //for(int k = 0; k < n; k+= blocksize){
-                for(int i_block = i; i_block < i+blocksize && i_block < n; i_block++) {
-                    for(int j_block = j; j_block < j+blocksize && j_block < n; j_block++) {
+        //for (int j = 0; j < n; j+=blocksize) {
+        
+            float flres[1];
+            for(int j_block = 0; j_block/* < i+blocksize && i_block*/ < n; j_block++) {
+                for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
+                    __m128 res2 = _mm_loadu_ps((At + (k_block + j_block*n)));
+                    __m128 res3 = _mm_loadu_ps((At + 4 + (k_block + j_block*n)));
+                    __m128 res4 = _mm_loadu_ps((At + 8 + (k_block + j_block*n)));
+                    __m128 res5 = _mm_loadu_ps((At + 12 + (k_block + j_block*n)));
+                    __m128 res6 = _mm_loadu_ps((At + 16 + (k_block + j_block*n)));
+                    __m128 res7 = _mm_loadu_ps((At + 20 + (k_block + j_block*n)));
+                    __m128 res8 = _mm_loadu_ps((At + 24 + (k_block + j_block*n)));
+                    __m128 res9 = _mm_loadu_ps((At + 28 + (k_block + j_block*n)));
+                    for(int i_block = 0; i_block/* < j+blocksize && j_block*/ < n; i_block++) {
                         /* Compute C(i,j) */
-                        float cij = C[i_block+j_block*n];
-                        for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
-                            __m128 res = _mm_mul_ps(_mm_loadu_ps((At + (k_block + i_block*n))), _mm_loadu_ps(B + (k_block + j_block * n)));
-                            __m128 res1 = _mm_mul_ps(_mm_loadu_ps((At + 4 + (k_block + i_block*n))), _mm_loadu_ps(B + 4 + (k_block + j_block * n)));
-                            res = _mm_add_ps(res,res1);
-                            __m128 res2 = _mm_mul_ps(_mm_loadu_ps((At + 8 + (k_block + i_block*n))), _mm_loadu_ps(B + 8 + (k_block + j_block * n)));
-                            res = _mm_add_ps(res,res2);
-                            __m128 res3 = _mm_mul_ps(_mm_loadu_ps((At + 12 + (k_block + i_block*n))), _mm_loadu_ps(B + 12 +  (k_block + j_block * n)));
-                            res = _mm_add_ps(res,res3);
-                            __m128 res4 = _mm_mul_ps(_mm_loadu_ps((At + 16 + (k_block + i_block*n))), _mm_loadu_ps(B + 16 +  (k_block + j_block * n)));
-                            res = _mm_add_ps(res,res4);
-                            __m128 res5 = _mm_mul_ps(_mm_loadu_ps((At + 20 + (k_block + i_block*n))), _mm_loadu_ps(B + 20 +  (k_block + j_block * n)));
-                            res = _mm_add_ps(res,res5);
-                            __m128 res6 = _mm_mul_ps(_mm_loadu_ps((At + 24 + (k_block + i_block*n))), _mm_loadu_ps(B + 24 +  (k_block + j_block * n)));
-                            res = _mm_add_ps(res,res6);
-                            __m128 res7 = _mm_mul_ps(_mm_loadu_ps((At + 28 + (k_block + i_block*n))), _mm_loadu_ps(B + 28 +  (k_block + j_block * n)));
-                            res = _mm_add_ps(res,res7);
+                        __m128 cij = _mm_load_ss(C + (i_block+j_block*n));
+                        //for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
+                            __m128 res = _mm_mul_ps(res2, _mm_loadu_ps(B + (k_block + j_block * n)));
+                            res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(B + 4 + (k_block + i_block * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(B + 8 + (k_block + i_block * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res5, _mm_loadu_ps(B + 12 +  (k_block + i_block * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res6, _mm_loadu_ps(B + 16 +  (k_block + i_block * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res7, _mm_loadu_ps(B + 20 +  (k_block + i_block * n))));
+                            res = _mm_add_ps(res, _mm_mul_ps(res8, _mm_loadu_ps(B + 24 +  (k_block + i_block * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res9, _mm_loadu_ps(B + 28 +  (k_block + i_block * n))));
                             res = _mm_hadd_ps(res,res);
                             res = _mm_hadd_ps(res,res);
-                            float flres[1];
-                            _mm_store_ss(flres, res);
-                            cij += flres[0];
+                            cij = _mm_add_ss(cij,res);
+                        //}
+                        if(k_block == 0){
+                            for ( int k_block = (n/32 * 32); k_block < n; k_block++){
+                                __m128 a = _mm_load_ss(At+ (k_block + i_block * n));
+                                __m128 b = _mm_load_ss(B + (k_block + j_block * n));
+                                cij = _mm_add_ss(cij, _mm_mul_ss(a,b));
+                            }
                         }
-                        for ( int k_block = (n/32 * 32); k_block < n; k_block++){
-                            cij += At[k_block + i_block * n] * B[k_block + j_block * n];
-                        }
-                        C[i_block+j_block*n] = cij;
+                        _mm_store_ss(C + (i_block+j_block*n), cij);
                     }
                 }
-            //}
-        }
-    }
+            }
+        //}
+    //}
     free( At );
 }
 
