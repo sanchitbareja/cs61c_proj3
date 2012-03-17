@@ -53,53 +53,129 @@ int mul_vectorized( int n, float *a )
  * On exit, A and B maintain their input values. */    
 void square_sgemm (int n, float* A, float* B, float* C)
 {
-    int blocksize = 16;
-    float *At = (float*)malloc( n*n*sizeof(float) );
+    int blocksize = 32;
+    float *At = (float*)malloc(n*n*sizeof(float) );
     transpose( n, 16, At, A );
+    
+    for(int j = 0; j < n; j++){
+	for(int i = 0; i < n/32 * 32; i+= 32){
+	    __m128 cij = _mm_loadu_ps((C + (i + j*n)));
+	    for( int sub_i = 0; sub_i < 4; sub_i ++){
+		__m128 res = _mm_mul_ps(_mm_loadu_ps(At + sub_i*n), _mm_loadu_ps(B + j*n));
+		for(int k = 4; k < n/4*4; k+=4){
+		    res = _mm_add_ps(res, _mm_mul_ps(_mm_loadu_ps(At + k + (i * n)),_mm_loadu_ps(B + k + (j*n))));
+		}
+		res = _mm_hadd_ps(res,res);
+		res = _mm_hadd_ps(res,res);
+		cij = _mm_add_ss(cij, res);
+		cij = _mm_shuffle_ps(cij, cij, _MM_SHUFFLE(0,3,2,1))
+	    }
+	    __m128 cij1 = _mm_loadu_ps((C + 4 + (i + j*n)));
+	    for( int sub_i = 4; sub_i < 8; sub_i ++){
+		__m128 res = _mm_mul_ps(_mm_loadu_ps(At + sub_i*n), _mm_loadu_ps(B + j*n));
+		for(int k = 4; k < n/4*4; k+=4){
+		    res = _mm_add_ps(res, _mm_mul_ps(_mm_loadu_ps(At + k + (i * n)),_mm_loadu_ps(B + k + (j*n))));
+		}
+		res = _mm_hadd_ps(res,res);
+		res = _mm_hadd_ps(res,res);
+		cij = _mm_add_ss(cij1, res);
+		cij1 = _mm_shuffle_ps(cij1, cij1, _MM_SHUFFLE(0,3,2,1))
+	    }
+	    __m128 cij2 = _mm_loadu_ps((C + 8 + (i + j*n)));
+	    for( int sub_i = 8; sub_i < 4; sub_i ++){
+		__m128 res = _mm_mul_ps(_mm_loadu_ps(At + sub_i*n), _mm_loadu_ps(B + j*n));
+		for(int k = 4; k < n/4*4; k+=4){
+		    res = _mm_add_ps(res, _mm_mul_ps(_mm_loadu_ps(At + k + (i * n)),_mm_loadu_ps(B + k + (j*n))));
+		}
+		res = _mm_hadd_ps(res,res);
+		res = _mm_hadd_ps(res,res);
+		cij = _mm_add_ss(cij, res);
+		cij = _mm_shuffle_ps(cij, cij, _MM_SHUFFLE(0,3,2,1))
+	    }
+	    __m128 cij3 = _mm_loadu_ps((C + 12 + (i + j*n)));
+	    __m128 cij4 = _mm_loadu_ps((C + 16 + (i + j*n)));
+	    __m128 cij5 = _mm_loadu_ps((C + 20 + (i + j*n)));
+	    __m128 cij6 = _mm_loadu_ps((C + 24 + (i + j*n)));
+	    __m128 cij7 = _mm_loadu_ps((C + 28 + (i + j*n)));
 
-    /* For each row i of A */
-    //for (int i = 0; i < n; i+=blocksize) {
-        /* For each column j of B */
-        //for (int j = 0; j < n; j+=blocksize) {
-        
-            float flres[1];
-            for(int j_block = 0; j_block/* < i+blocksize && i_block*/ < n; j_block++) {
+	    _mm_storeu_ps((C + (i + j*n)),cij);
+	    _mm_storeu_ps((C + 4 + (i + j*n)),cij1);
+	    _mm_storeu_ps((C + 8 + (i + j*n)),cij2);
+	    _mm_storeu_ps((C + 12 + (i + j*n)),cij3);
+	    _mm_storeu_ps((C + 16 + (i + j*n)),cij4);
+	    _mm_storeu_ps((C + 20 + (i + j*n)),cij5);
+	    _mm_storeu_ps((C + 24 + (i + j*n)),cij6);
+	    _mm_storeu_ps((C + 28 + (i + j*n)),cij7);
+	}
+    }
+    /*for(int j_block = 0; j_block < n; j_block++) {
                 for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
-                    __m128 res2 = _mm_loadu_ps((At + (k_block + j_block*n)));
-                    __m128 res3 = _mm_loadu_ps((At + 4 + (k_block + j_block*n)));
-                    __m128 res4 = _mm_loadu_ps((At + 8 + (k_block + j_block*n)));
-                    __m128 res5 = _mm_loadu_ps((At + 12 + (k_block + j_block*n)));
-                    __m128 res6 = _mm_loadu_ps((At + 16 + (k_block + j_block*n)));
-                    __m128 res7 = _mm_loadu_ps((At + 20 + (k_block + j_block*n)));
-                    __m128 res8 = _mm_loadu_ps((At + 24 + (k_block + j_block*n)));
-                    __m128 res9 = _mm_loadu_ps((At + 28 + (k_block + j_block*n)));
-                    for(int i_block = 0; i_block/* < j+blocksize && j_block*/ < n; i_block++) {
-                        /* Compute C(i,j) */
-                        __m128 cij = _mm_load_ss(C + (j_block+i_block*n));
-                        //for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
-                            __m128 res = _mm_mul_ps(res2, _mm_loadu_ps(B + (k_block + i_block * n)));
-                            res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(B + 4 + (k_block + i_block * n))));
-                            res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(B + 8 + (k_block + i_block * n))));
-                            res = _mm_add_ps(res,_mm_mul_ps(res5, _mm_loadu_ps(B + 12 +  (k_block + i_block * n))));
-                            res = _mm_add_ps(res,_mm_mul_ps(res6, _mm_loadu_ps(B + 16 +  (k_block + i_block * n))));
-                            res = _mm_add_ps(res,_mm_mul_ps(res7, _mm_loadu_ps(B + 20 +  (k_block + i_block * n))));
-                            res = _mm_add_ps(res,_mm_mul_ps(res8, _mm_loadu_ps(B + 24 +  (k_block + i_block * n))));
-                            res = _mm_add_ps(res,_mm_mul_ps(res9, _mm_loadu_ps(B + 28 +  (k_block + i_block * n))));
+                    __m128 res2 = _mm_loadu_ps((B + (k_block + j_block*n)));
+                    __m128 res3 = _mm_loadu_ps((B + 4 + (k_block + j_block*n)));
+                    __m128 res4 = _mm_loadu_ps((B + 8 + (k_block + j_block*n)));
+                    __m128 res5 = _mm_loadu_ps((B + 12 + (k_block + j_block*n)));
+                    __m128 res6 = _mm_loadu_ps((B + 16 + (k_block + j_block*n)));
+                    __m128 res7 = _mm_loadu_ps((B + 20 + (k_block + j_block*n)));
+                    __m128 res8 = _mm_loadu_ps((B + 24 + (k_block + j_block*n)));
+                    __m128 res9 = _mm_loadu_ps((B + 28 + (k_block + j_block*n)));
+                    for(int i_block = 0; i_block < (n/4)*4; i_block+= 4) {
+                        __m128 cij = _mm_load_ps(C + (i_block+j_block*n));
+                            __m128 res = _mm_mul_ps(res2, _mm_loadu_ps(At + (k_block + i_block * n)));
+                            res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(At + 4 + (k_block + i_block * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(At + 8 + (k_block + i_block * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res5, _mm_loadu_ps(At + 12 +  (k_block + i_block * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res6, _mm_loadu_ps(At + 16 +  (k_block + i_block * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res7, _mm_loadu_ps(At + 20 +  (k_block + i_block * n))));
+                            res = _mm_add_ps(res, _mm_mul_ps(res8, _mm_loadu_ps(At + 24 +  (k_block + i_block * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res9, _mm_loadu_ps(At + 28 +  (k_block + i_block * n))));
                             res = _mm_hadd_ps(res,res);
                             res = _mm_hadd_ps(res,res);
                             cij = _mm_add_ss(cij,res);
-                        //}
-                        if(k_block == 0){
-                            for ( int k_block = (n/32 * 32); k_block < n; k_block++){
-                                __m128 a = _mm_load_ss(At+ (k_block + i_block * n));
-                                __m128 b = _mm_load_ss(B + (k_block + j_block * n));
-                                cij = _mm_add_ss(cij, _mm_mul_ss(a,b));
-                            }
-                        }
-                        _mm_store_ss(C + (i_block+j_block*n), cij);
+                            cij = _mm_shuffle_ps(cij,cij,_MM_SHUFFLE(0,3,2,1));
+
+                            res = _mm_mul_ps(res2, _mm_loadu_ps(At + (k_block + (i_block+1) * n)));
+                            res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(At + 4 + (k_block + (i_block+1) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(At + 8 + (k_block + (i_block+1) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res5, _mm_loadu_ps(At + 12 +  (k_block + (i_block+1) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res6, _mm_loadu_ps(At + 16 +  (k_block + (i_block+1) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res7, _mm_loadu_ps(At + 20 +  (k_block + (i_block+1) * n))));
+                            res = _mm_add_ps(res, _mm_mul_ps(res8, _mm_loadu_ps(At + 24 +  (k_block + (1+i_block) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res9, _mm_loadu_ps(At + 28 +  (k_block + (i_block+1) * n))));
+                            res = _mm_hadd_ps(res,res);
+                            res = _mm_hadd_ps(res,res);
+                            cij = _mm_add_ss(cij,res);
+                            cij = _mm_shuffle_ps(cij,cij,_MM_SHUFFLE(0,3,2,1));
+
+                            res = _mm_mul_ps(res2, _mm_loadu_ps(At + (k_block + (i_block+2) * n)));
+                            res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(At + 4 + (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(At + 8 + (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res5, _mm_loadu_ps(At + 12 +  (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res6, _mm_loadu_ps(At + 16 +  (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res7, _mm_loadu_ps(At + 20 +  (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res, _mm_mul_ps(res8, _mm_loadu_ps(At + 24 +  (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res9, _mm_loadu_ps(At + 28 +  (k_block + (i_block+2) * n))));
+                            res = _mm_hadd_ps(res,res);
+                            res = _mm_hadd_ps(res,res);
+                            cij = _mm_add_ss(cij,res);
+                            cij = _mm_shuffle_ps(cij,cij,_MM_SHUFFLE(0,3,2,1));
+
+                            res = _mm_mul_ps(res2, _mm_loadu_ps(At + (k_block + (i_block+3) * n)));
+                            res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(At + 4 + (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(At + 8 + (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res5, _mm_loadu_ps(At + 12 +  (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res6, _mm_loadu_ps(At + 16 +  (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res7, _mm_loadu_ps(At + 20 +  (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res, _mm_mul_ps(res8, _mm_loadu_ps(At + 24 +  (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res9, _mm_loadu_ps(At + 28 +  (k_block + (i_block+3) * n))));
+                            res = _mm_hadd_ps(res,res);
+                            res = _mm_hadd_ps(res,res);
+                            cij = _mm_add_ss(cij,res);
+                            cij = _mm_shuffle_ps(cij,cij,_MM_SHUFFLE(0,3,2,1));
+
+                        _mm_store_ps(C + (i_block+j_block*n), cij);
                     }
                 }
-            }
+		}*/
         //}
     //}
     free( At );

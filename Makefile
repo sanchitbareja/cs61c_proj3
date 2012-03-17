@@ -7,7 +7,7 @@ INCLUDES = -I$(GOTO)
 OMP = -fopenmp
 LIBS = -lpthread  
 # a pretty good flag selection for this machine...
-CFLAGS = -fopenmp -O2 -pipe -fno-omit-frame-pointer -march=native 
+CFLAGS = -fopenmp -g -O2 -pipe -fno-omit-frame-pointer -march=native 
 
 all:	bench-naive bench-small bench-all bench-openmp 
 
