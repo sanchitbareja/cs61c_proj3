@@ -74,9 +74,9 @@ void square_sgemm (int n, float* A, float* B, float* C)
                     __m128 res7 = _mm_loadu_ps((B + 20 + (k_block + j_block*n)));
                     __m128 res8 = _mm_loadu_ps((B + 24 + (k_block + j_block*n)));
                     __m128 res9 = _mm_loadu_ps((B + 28 + (k_block + j_block*n)));
-                    for(int i_block = 0; i_block/* < j+blocksize && j_block*/ < n; i_block++) {
+                    for(int i_block = 0; i_block/* < j+blocksize && j_block*/ < n; i_block+= 4) {
                         /* Compute C(i,j) */
-                        __m128 cij = _mm_load_ss(C + (i_block+j_block*n));
+                        __m128 cij = _mm_load_ps(C + (i_block+j_block*n));
                         //for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
                             __m128 res = _mm_mul_ps(res2, _mm_loadu_ps(At + (k_block + i_block * n)));
                             res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(At + 4 + (k_block + i_block * n))));
@@ -89,8 +89,50 @@ void square_sgemm (int n, float* A, float* B, float* C)
                             res = _mm_hadd_ps(res,res);
                             res = _mm_hadd_ps(res,res);
                             cij = _mm_add_ss(cij,res);
+                            cij = _mm_shuffle_ps(cij,cij,_MM_SHUFFLE(0,3,2,1));
+
+                            res = _mm_mul_ps(res2, _mm_loadu_ps(At + (k_block + (i_block+1) * n)));
+                            res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(At + 4 + (k_block + (i_block+1) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(At + 8 + (k_block + (i_block+1) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res5, _mm_loadu_ps(At + 12 +  (k_block + (i_block+1) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res6, _mm_loadu_ps(At + 16 +  (k_block + (i_block+1) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res7, _mm_loadu_ps(At + 20 +  (k_block + (i_block+1) * n))));
+                            res = _mm_add_ps(res, _mm_mul_ps(res8, _mm_loadu_ps(At + 24 +  (k_block + (1+i_block) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res9, _mm_loadu_ps(At + 28 +  (k_block + (i_block+1) * n))));
+                            res = _mm_hadd_ps(res,res);
+                            res = _mm_hadd_ps(res,res);
+                            cij = _mm_add_ss(cij,res);
+                            cij = _mm_shuffle_ps(cij,cij,_MM_SHUFFLE(0,3,2,1));
+
+
+                            res = _mm_mul_ps(res2, _mm_loadu_ps(At + (k_block + (i_block+2) * n)));
+                            res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(At + 4 + (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(At + 8 + (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res5, _mm_loadu_ps(At + 12 +  (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res6, _mm_loadu_ps(At + 16 +  (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res7, _mm_loadu_ps(At + 20 +  (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res, _mm_mul_ps(res8, _mm_loadu_ps(At + 24 +  (k_block + (i_block+2) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res9, _mm_loadu_ps(At + 28 +  (k_block + (i_block+2) * n))));
+                            res = _mm_hadd_ps(res,res);
+                            res = _mm_hadd_ps(res,res);
+                            cij = _mm_add_ss(cij,res);
+                            cij = _mm_shuffle_ps(cij,cij,_MM_SHUFFLE(0,3,2,1));
+
+
+                            res = _mm_mul_ps(res2, _mm_loadu_ps(At + (k_block + (i_block+3) * n)));
+                            res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(At + 4 + (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(At + 8 + (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res5, _mm_loadu_ps(At + 12 +  (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res6, _mm_loadu_ps(At + 16 +  (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res7, _mm_loadu_ps(At + 20 +  (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res, _mm_mul_ps(res8, _mm_loadu_ps(At + 24 +  (k_block + (i_block+3) * n))));
+                            res = _mm_add_ps(res,_mm_mul_ps(res9, _mm_loadu_ps(At + 28 +  (k_block + (i_block+3) * n))));
+                            res = _mm_hadd_ps(res,res);
+                            res = _mm_hadd_ps(res,res);
+                            cij = _mm_add_ss(cij,res);
+                            cij = _mm_shuffle_ps(cij,cij,_MM_SHUFFLE(0,3,2,1));
                         //}
-                        _mm_store_ss(C + (i_block+j_block*n), cij);
+                        _mm_store_ps(C + (i_block+j_block*n), cij);
                     }
                 }
             }
