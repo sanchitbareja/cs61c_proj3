@@ -57,14 +57,7 @@ void square_sgemm (int n, float* A, float* B, float* C)
     float *At = (float*)malloc(n*n*sizeof(float) );
     transpose( n, 13, At, A );
 
-    int old_n = n;
-    /* For each row i of A */
-    //for (int i = 0; i < n; i+=blocksize) {
-        /* For each column j of B */
-        //for (int j = 0; j < n; j+=blocksize) {
-        
-            float flres[1];
-            for(int j_block = 0; j_block/* < i+blocksize && i_block*/ < n; j_block++) {
+            for(int j_block = 0; j_block < n; j_block++) {
                 for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
                     __m128 res2 = _mm_loadu_ps((B + (k_block + j_block*n)));
                     __m128 res3 = _mm_loadu_ps((B + 4 + (k_block + j_block*n)));
@@ -74,10 +67,8 @@ void square_sgemm (int n, float* A, float* B, float* C)
                     __m128 res7 = _mm_loadu_ps((B + 20 + (k_block + j_block*n)));
                     __m128 res8 = _mm_loadu_ps((B + 24 + (k_block + j_block*n)));
                     __m128 res9 = _mm_loadu_ps((B + 28 + (k_block + j_block*n)));
-                    for(int i_block = 0; i_block/* < j+blocksize && j_block*/ < n; i_block+= 4) {
-                        /* Compute C(i,j) */
+                    for(int i_block = 0; i_block < (n/4)*4; i_block+= 4) {
                         __m128 cij = _mm_load_ps(C + (i_block+j_block*n));
-                        //for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
                             __m128 res = _mm_mul_ps(res2, _mm_loadu_ps(At + (k_block + i_block * n)));
                             res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(At + 4 + (k_block + i_block * n))));
                             res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(At + 8 + (k_block + i_block * n))));
@@ -104,7 +95,6 @@ void square_sgemm (int n, float* A, float* B, float* C)
                             cij = _mm_add_ss(cij,res);
                             cij = _mm_shuffle_ps(cij,cij,_MM_SHUFFLE(0,3,2,1));
 
-
                             res = _mm_mul_ps(res2, _mm_loadu_ps(At + (k_block + (i_block+2) * n)));
                             res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(At + 4 + (k_block + (i_block+2) * n))));
                             res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(At + 8 + (k_block + (i_block+2) * n))));
@@ -118,7 +108,6 @@ void square_sgemm (int n, float* A, float* B, float* C)
                             cij = _mm_add_ss(cij,res);
                             cij = _mm_shuffle_ps(cij,cij,_MM_SHUFFLE(0,3,2,1));
 
-
                             res = _mm_mul_ps(res2, _mm_loadu_ps(At + (k_block + (i_block+3) * n)));
                             res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(At + 4 + (k_block + (i_block+3) * n))));
                             res = _mm_add_ps(res,_mm_mul_ps(res4, _mm_loadu_ps(At + 8 + (k_block + (i_block+3) * n))));
@@ -131,7 +120,7 @@ void square_sgemm (int n, float* A, float* B, float* C)
                             res = _mm_hadd_ps(res,res);
                             cij = _mm_add_ss(cij,res);
                             cij = _mm_shuffle_ps(cij,cij,_MM_SHUFFLE(0,3,2,1));
-                        //}
+
                         _mm_store_ps(C + (i_block+j_block*n), cij);
                     }
                 }
