@@ -55,9 +55,9 @@ void transpose( int n, int blocksize, float *dst, float *src ) {
 void square_sgemm (int n, float* A, float* B, float* C)
 {
     int new_n = n + 16 - ((n % 16 == 0) ? 16 : n%16);
-    static float new_A[1024 * 1024];
-    static float new_B[1024 * 1024];
-    static float new_C[1024 * 1024];
+    static float new_A[1024 * 1024] __attribute__((aligned(16)));
+    static float new_B[1024 * 1024] __attribute__((aligned(16)));
+    static float new_C[1024 * 1024];__attribute__((aligned(16)));
 
     for(int i = 0; i < n; i++)
     {
