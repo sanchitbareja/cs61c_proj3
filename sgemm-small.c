@@ -55,16 +55,42 @@ void square_sgemm (int n, float* A, float* B, float* C)
 {
     int blocksize = 32;
     static  float Bt[1024*1024]__attribute__ ((aligned(16)));
-    transpose( n, 13, Bt, B );
+    //transpose( n, 13, Bt, B );
 
     for(int j_block = 0; j_block < n; j_block++) {
 
-        for(int i_block = 0; i_block < n/4*4; i_block+=4) {
+        for(int i_block = 0; i_block < n/16*16; i_block+=16) {
             __m128 cij = _mm_loadu_ps(C + i_block + j_block * n);
-            for(int k_block = 0; k_block < n; k_block++){
-                cij = _mm_add_ps(cij, _mm_mul_ps(_mm_loadu_ps(A + i_block + k_block * n), _mm_loadu_ps(Bt + j_block + k_block * n)));
+            __m128 cij2 = _mm_loadu_ps(C + i_block + 4 + j_block * n);
+            __m128 cij3 = _mm_loadu_ps(C + i_block + 8 + j_block * n);
+            __m128 cij4 = _mm_loadu_ps(C + i_block + 12 + j_block * n);
+            for(int k_block = 0; k_block < n/4*4; k_block+= 4){
+                cij = _mm_add_ps(cij, _mm_mul_ps(_mm_load1_ps(B + k_block+ j_block * n),_mm_loadu_ps(A + i_block + (k_block) * n)));
+                cij = _mm_add_ps(cij, _mm_mul_ps(_mm_load1_ps(B +1+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + (k_block+1) * n)));
+                cij = _mm_add_ps(cij, _mm_mul_ps(_mm_load1_ps(B +2+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + (k_block+2) * n)));
+                cij = _mm_add_ps(cij, _mm_mul_ps(_mm_load1_ps(B +3+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + (k_block+3) * n)));
+
+                cij2 = _mm_add_ps(cij2, _mm_mul_ps(_mm_load1_ps(B + k_block+ j_block * n),_mm_loadu_ps(A + i_block + 4 + (k_block) * n)));
+                cij2 = _mm_add_ps(cij2, _mm_mul_ps(_mm_load1_ps(B +1+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + 4 + (k_block+1) * n)));
+                cij2 = _mm_add_ps(cij2, _mm_mul_ps(_mm_load1_ps(B +2+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + 4+ (k_block+2) * n)));
+                cij2 = _mm_add_ps(cij2, _mm_mul_ps(_mm_load1_ps(B +3+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + 4+ (k_block+3) * n)));
+                
+                cij3 = _mm_add_ps(cij3, _mm_mul_ps(_mm_load1_ps(B + k_block+ j_block * n),_mm_loadu_ps(A + i_block + 8 + (k_block) * n)));
+                cij3 = _mm_add_ps(cij3, _mm_mul_ps(_mm_load1_ps(B +1+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + 8 + (k_block+1) * n)));
+                cij3 = _mm_add_ps(cij3, _mm_mul_ps(_mm_load1_ps(B +2+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + 8+ (k_block+2) * n)));
+                cij3 = _mm_add_ps(cij3, _mm_mul_ps(_mm_load1_ps(B +3+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + 8+ (k_block+3) * n)));
+
+                cij4 = _mm_add_ps(cij4, _mm_mul_ps(_mm_load1_ps(B + k_block+ j_block * n),_mm_loadu_ps(A + i_block + 12 + (k_block) * n)));
+                cij4 = _mm_add_ps(cij4, _mm_mul_ps(_mm_load1_ps(B +1+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + 12 + (k_block+1) * n)));
+                cij4 = _mm_add_ps(cij4, _mm_mul_ps(_mm_load1_ps(B +2+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + 12 + (k_block+2) * n)));
+                cij4 = _mm_add_ps(cij4, _mm_mul_ps(_mm_load1_ps(B +3+ k_block+ j_block * n),_mm_loadu_ps(A + i_block + 12 + (k_block+3) * n)));
+
+
             }
-            _mm_store_ps(C + i_block +j_block * n, cij);
+            _mm_store_ps((C + i_block +j_block * n), cij);
+            _mm_store_ps((C + i_block + 4 + j_block * n),cij2);
+            _mm_store_ps((C + i_block + 8 + j_block * n),cij3);
+            _mm_store_ps((C + i_block + 12 + j_block * n),cij4);
         }
     }
     //}
