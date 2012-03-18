@@ -55,7 +55,6 @@ int main( int argc, char **argv )
   /* For each test size */
   for (int isize = 0; isize < sizeof(test_sizes)/sizeof(test_sizes[0]); ++isize)
   {
-    printf("Starting test %d\n",isize);
     int n = test_sizes[isize];
 
     /* Create and fill 3 random matrices A,B,C*/
@@ -103,10 +102,11 @@ int main( int argc, char **argv )
     absolute_value (C, n * n);
 
     cblas_sgemm( CblasColMajor,CblasNoTrans,CblasNoTrans, n,n,n, -3.0*FLT_EPSILON*n, A,n, B,n, 1, C,n );
+
     /* After this test if any element in C is still positive something went wrong in square_sgemm */
     for( int i = 0; i < n * n; i++ )
       if( C[i] > 0 ) {
-	printf( "FAILURE: error in matrix multiply exceeds an acceptable margin\n");
+	printf( "FAILURE: error in matrix multiply exceeds an acceptable margin\n" );
 	return -1;
       }
     free(A);
