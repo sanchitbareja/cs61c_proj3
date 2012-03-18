@@ -47,24 +47,61 @@ int mul_vectorized( int n, float *a )
     return mul2;
 }
 */
+void square_sgemm_naive (int n, float* A, float* B, float* C)
+{
+  /* For each row i of A */
+  for (int i = 0; i < n; ++i)
+    /* For each column j of B */
+    for (int j = 0; j < n; ++j) 
+    {
+      /* Compute C(i,j) */
+      float cij = C[i+j*n];
+      for( int k = 0; k < n; k++ )
+	cij += A[i+k*n] * B[k+j*n];
+      C[i+j*n] = cij;
+    }
+}
+
+
+
 /* This routine performs a sgemm operation
  *  C := C + A * B
  * where A, B, and C are lda-by-lda matrices stored in column-major format.
  * On exit, A and B maintain their input values. */    
 void square_sgemm (int n, float* A, float* B, float* C)
 {
-    int blocksize = 16;
+    //int blocksize = 16;
+    float *A2 = (float*)malloc( n*n*sizeof(float) );
     float *At = (float*)malloc( n*n*sizeof(float) );
+    transpose(n,16,At,A);
+    
+    for(int i = 0; i < n; i+=4){
+	for(int j = 0; j < n; j+=1){
+	    for(int k = 0; k < n; k+=4){
+	        _m128 res = _mm_mul_ps(_mm_loadu_ps(B + (k+j*n)),_mm_loadu_ps(At + (k+j*n)));
+		res = _mm_hadd_ps(res,res);
+		res = _mm_hadd_ps(res,res);
+	    }
+	    _mm_storeu_ps(C + (i+j*n), cij);
+	}
+    }
+
+    square_sgemm_naive(n,A,B,A2);
+    for(int i = 0; i< n; i++){
+	for(int j = 0; j<n; j++){
+	    printf("vals of C vs A2: %f vs %f \n",C[i+j*n],A2[i+j*n]);
+	}
+    }
+    
+	   
+    /*
     transpose( n, 16, At, A );
 
-    /* For each row i of A */
     //for (int i = 0; i < n; i+=blocksize) {
-        /* For each column j of B */
-        //for (int j = 0; j < n; j+=blocksize) {
-        
+         //for (int j = 0; j < n; j+=blocksize) {
             float flres[1];
-            for(int j_block = 0; j_block/* < i+blocksize && i_block*/ < n; j_block++) {
-                for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
+    *///for(int j_block = 0; j_block/* < i+blocksize && i_block*/ < n; j_block++) {
+    /*           for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
                     __m128 res2 = _mm_loadu_ps((At + (k_block + j_block*n)));
                     __m128 res3 = _mm_loadu_ps((At + 4 + (k_block + j_block*n)));
                     __m128 res4 = _mm_loadu_ps((At + 8 + (k_block + j_block*n)));
@@ -73,9 +110,8 @@ void square_sgemm (int n, float* A, float* B, float* C)
                     __m128 res7 = _mm_loadu_ps((At + 20 + (k_block + j_block*n)));
                     __m128 res8 = _mm_loadu_ps((At + 24 + (k_block + j_block*n)));
                     __m128 res9 = _mm_loadu_ps((At + 28 + (k_block + j_block*n)));
-                    for(int i_block = 0; i_block/* < j+blocksize && j_block*/ < n; i_block++) {
-                        /* Compute C(i,j) */
-                        __m128 cij = _mm_load_ss(C + (j_block+i_block*n));
+    *///               for(int i_block = 0; i_block/* < j+blocksize && j_block*/ < n; i_block++) {
+    /*			__m128 cij = _mm_load_ss(C + (j_block+i_block*n));
                         //for( int k_block = 0; k_block < (n/32*32); k_block+=32) {
                             __m128 res = _mm_mul_ps(res2, _mm_loadu_ps(B + (k_block + i_block * n)));
                             res = _mm_add_ps(res,_mm_mul_ps(res3, _mm_loadu_ps(B + 4 + (k_block + i_block * n))));
@@ -102,23 +138,12 @@ void square_sgemm (int n, float* A, float* B, float* C)
             }
         //}
     //}
+	    
     free( At );
+    */
 }
 
-void square_sgemm_naive (int n, float* A, float* B, float* C)
-{
-  /* For each row i of A */
-  for (int i = 0; i < n; ++i)
-    /* For each column j of B */
-    for (int j = 0; j < n; ++j) 
-    {
-      /* Compute C(i,j) */
-      float cij = C[i+j*n];
-      for( int k = 0; k < n; k++ )
-	cij += A[i+k*n] * B[k+j*n];
-      C[i+j*n] = cij;
-    }
-}
+
 
 /*
 int main( int argc, char **argv ) {
