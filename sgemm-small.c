@@ -1,3 +1,12 @@
+/*
+  Partners
+  Name1: Eric Atkinson
+  Login1: cs61c-er
+
+  Name2: Sanchit Bareja
+  Login2: cs61c-ka
+  
+ */
 #include <stdio.h>
 #include <smmintrin.h> /* header file for the SSE intrinsics we gonna use */
 #include <stdlib.h>
