@@ -116,55 +116,55 @@ void square_sgemm_naive (int n, float* A, float* B, float* C)
    int main( int argc, char **argv ) {
    int n = 64,i,j;
 
-    // allocate an n*n block of integers for the matrices
-    float *A = (float*)malloc( n*n*sizeof(float) );
-    float *B = (float*)malloc( n*n*sizeof(float) );
-    float *C = (float*)malloc( n*n*sizeof(float) );
-    float *D = (float*)malloc( n*n*sizeof(float) );
-    float *E = (float*)malloc( n*n*sizeof(float) );
-    float *F = (float*)malloc( n*n*sizeof(float) );
+// allocate an n*n block of integers for the matrices
+float *A = (float*)malloc( n*n*sizeof(float) );
+float *B = (float*)malloc( n*n*sizeof(float) );
+float *C = (float*)malloc( n*n*sizeof(float) );
+float *D = (float*)malloc( n*n*sizeof(float) );
+float *E = (float*)malloc( n*n*sizeof(float) );
+float *F = (float*)malloc( n*n*sizeof(float) );
 
-    // initialize A,B to random integers 
-    srand48( time( NULL ) );
-    for( i = 0; i < n*n; i++ ) A[i] = lrand48( );
-    for( i = 0; i < n*n; i++ ) B[i] = lrand48( );
-    for( i = 0; i < n*n; i++ ) D[i] = A[i];
-    for( i = 0; i < n*n; i++ ) E[i] = B[i];
-    for( i = 0; i < n*n; i++ ) C[i] = 0;
-    for( i = 0; i < n*n; i++ ) F[i] = 0;
-    
-    // measure performance 
-    struct timeval start, end;
+// initialize A,B to random integers 
+srand48( time( NULL ) );
+for( i = 0; i < n*n; i++ ) A[i] = lrand48( );
+for( i = 0; i < n*n; i++ ) B[i] = lrand48( );
+for( i = 0; i < n*n; i++ ) D[i] = A[i];
+for( i = 0; i < n*n; i++ ) E[i] = B[i];
+for( i = 0; i < n*n; i++ ) C[i] = 0;
+for( i = 0; i < n*n; i++ ) F[i] = 0;
 
-    gettimeofday( &start, NULL );
-    square_sgemm( n, A, B, C );
-    gettimeofday( &end, NULL );
+// measure performance 
+struct timeval start, end;
 
-    double seconds = (end.tv_sec - start.tv_sec) + 1.0e-6 * (end.tv_usec - start.tv_usec);
-    printf( "%g milliseconds\n", seconds*1e3 );
+gettimeofday( &start, NULL );
+square_sgemm( n, A, B, C );
+gettimeofday( &end, NULL );
 
-    gettimeofday( &start, NULL );
-    square_sgemm_naive( n, D, E,F );
-    gettimeofday( &end, NULL );
+double seconds = (end.tv_sec - start.tv_sec) + 1.0e-6 * (end.tv_usec - start.tv_usec);
+printf( "%g milliseconds\n", seconds*1e3 );
 
-    seconds = (end.tv_sec - start.tv_sec) + 1.0e-6 * (end.tv_usec - start.tv_usec);
-    printf( "%g milliseconds\n", seconds*1e3 );
+gettimeofday( &start, NULL );
+square_sgemm_naive( n, D, E,F );
+gettimeofday( &end, NULL );
 
-    // check correctness 
-    for( i = 0; i < n; i++ )
-        for( j = 0; j < n; j++ )
-            if( C[j+i*n] != F[j+i*n] ) {
-	        printf("Error!!!! MMM does not result in correct answer!! i = %d j = %d C = %f F = %f \n", i, j, C[j+i*n], F[j+i*n]);
-	        exit( -1 );
-            }
-  
-    // release resources
-    free( A );
-    free( B );
-    free( C );
-    free( D );
-    free( E );
-    free( F );
-    return 0;
+seconds = (end.tv_sec - start.tv_sec) + 1.0e-6 * (end.tv_usec - start.tv_usec);
+printf( "%g milliseconds\n", seconds*1e3 );
+
+// check correctness 
+for( i = 0; i < n; i++ )
+for( j = 0; j < n; j++ )
+if( C[j+i*n] != F[j+i*n] ) {
+printf("Error!!!! MMM does not result in correct answer!! i = %d j = %d C = %f F = %f \n", i, j, C[j+i*n], F[j+i*n]);
+exit( -1 );
+}
+
+// release resources
+free( A );
+free( B );
+free( C );
+free( D );
+free( E );
+free( F );
+return 0;
 }
 */
