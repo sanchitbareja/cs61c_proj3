@@ -106,8 +106,8 @@ int main( int argc, char **argv )
     /* After this test if any element in C is still positive something went wrong in square_sgemm */
     for( int i = 0; i < n * n; i++ )
       if( C[i] > 0 ) {
-	printf( "FAILURE: error in matrix multiply exceeds an acceptable margin %d %d \n", i % n, i / n);
-	//return -1;
+	printf( "FAILURE: error in matrix multiply exceeds an acceptable margin\n");
+	return -1;
       }
     free(A);
     free(B);

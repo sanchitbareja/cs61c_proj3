@@ -2,6 +2,7 @@
 #include <smmintrin.h> /* header file for the SSE intrinsics we gonna use */
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include <sys/time.h>
 
 void transpose( int n, int blocksize, float *dst, float *src ) {
@@ -53,9 +54,38 @@ void transpose( int n, int blocksize, float *dst, float *src ) {
  * On exit, A and B maintain their input values. */    
 void square_sgemm (int n, float* A, float* B, float* C)
 {
-    int blocksize = 32;
-    static  float Bt[1024*1024]__attribute__ ((aligned(16)));
-    //transpose( n, 13, Bt, B );
+    int new_n = n + 16 - ((n % 16 == 0) ? 16 : n%16);
+    static float new_A[1024 * 1024];
+    static float new_B[1024 * 1024];
+    static float new_C[1024 * 1024];
+
+    for(int i = 0; i < n; i++)
+    {
+       memcpy(new_A+i*new_n,A+i*n,n*sizeof(float)); 
+       memcpy(new_B+i*new_n,B+i*n,n*sizeof(float)); 
+       memcpy(new_C+i*new_n,C+i*n,n*sizeof(float)); 
+
+       memset(new_A+n+i*new_n,0,(new_n-n)*sizeof(float));
+       memset(new_B+n+i*new_n,0,(new_n-n)*sizeof(float));
+       memset(new_C+n+i*new_n,0,(new_n-n)*sizeof(float));
+    }
+
+
+    for(int i = n; i < new_n; i++)
+    {
+        memset(new_A + i*new_n, 0, new_n * sizeof(float));
+        memset(new_B + i*new_n, 0, new_n * sizeof(float));
+        memset(new_C + i*new_n, 0, new_n * sizeof(float));
+    }
+
+    float* old_A = A;
+    A = new_A;
+    float* old_B = B;
+    B = new_B;
+    float* old_C = C;
+    C = new_C;
+    int old_n = n;
+    n = new_n;
 
     for(int j_block = 0; j_block < n; j_block++) {
 
@@ -93,6 +123,13 @@ void square_sgemm (int n, float* A, float* B, float* C)
             _mm_store_ps((C + i_block + 12 + j_block * n),cij4);
         }
     }
+
+    for(int i = 0; i < old_n; i++){
+        memcpy (old_C + i * old_n, C + i*n, old_n * sizeof(float));
+        memcpy (old_B + i * old_n, B + i*n, old_n * sizeof(float));
+        memcpy (old_A + i * old_n, A + i*n, old_n * sizeof(float));
+    }
+
     //}
     //}
 }
